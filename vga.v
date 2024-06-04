@@ -48,7 +48,7 @@ reg [9:0] vc;
 reg [9:0] bird_y;
 
 initial begin
-    bird_y = 10'd240;
+    bird_y <= 10'd240;
 end
 
 // Horizontal & vertical counters --
@@ -58,10 +58,13 @@ end
 // only triggered on signal transitions or "edges".
 // posedge = rising edge  &  negedge = falling edge
 // Assignment statements can only be used on type "reg" and need to be of the "non-blocking" type: <=
+
+always @(y) begin
+	bird_y <= y;
+end
+	
 always @(posedge dclk or posedge clr)
 begin
-    bird_y <= y;
-    $display(bird_y);
 	// reset condition
 	if (clr == 1)
 	begin
@@ -116,13 +119,13 @@ begin
 		if (hc >= hbp && hc < (hbp+bird_x))
 		begin
 			red = 3'b000;
-			green = 3'b100;
+			green = 3'b101;
 			blue = 3'b111;
 		end
 		// display yellow bar
-		else if (hc >= (hbp+bird_x) && hc < (hbp+bird_x+20))
+		else if (hc >= (hbp+bird_x) && hc < (hbp+bird_x+15))
 		begin
-			if (vc >= (vbp+bird_y) && vc < (vbp+bird_y+20))
+			if (vc >= (vbp+bird_y) && vc < (vbp+bird_y+15))
                   begin
                     red = 3'b111;
                     green = 3'b111;
@@ -130,15 +133,15 @@ begin
                   end else
                   begin
                       red = 3'b000;
-                      green = 3'b100;
+                      green = 3'b101;
                       blue = 3'b111;
                   end
 		end
 		// display cyan bar
-		else if (hc >= (hbp+bird_x+20) && hc < (hfp))
+		else if (hc >= (hbp+bird_x+15) && hc < (hfp))
 		begin
 			red = 3'b000;
-			green = 3'b110;
+			green = 3'b101;
 			blue = 3'b111;
 		end
 		// we're outside active horizontal range so display black
