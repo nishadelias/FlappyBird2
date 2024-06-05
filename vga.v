@@ -43,18 +43,20 @@ parameter vbp = 31; 		// end of vertical back porch
 parameter vfp = 511; 	// beginning of vertical front porch
 // active horizontal video is therefore: 784 - 144 = 640
 // active vertical video is therefore: 511 - 31 = 480
-parameter bird_x = 320;
+parameter bird_x = 240;
 
 // registers for storing the horizontal & vertical counters
 reg [9:0] hc;
 reg [9:0] vc;
 reg [9:0] bird_y;
 reg [20:0] counter;
+reg [5:0] velocity;
 
 initial begin
     bird_y = 10'd240;
     counter = 0;
     gamestate = 0;
+    velocity = -10;
 end
 
 // Horizontal & vertical counters --
@@ -73,14 +75,17 @@ always @(posedge dclk or posedge clr)
 begin
 
     if (!pause) begin
-    if (!gamestate && flap) gamestate = 1;
+
+	    if (!gamestate && flap) gamestate = 1;
     
-    counter <= counter+1;
+	    counter <= counter+1;
     
-    if (gamestate) begin
-    if (flap && bird_y > 15 && counter % 200000 == 0) bird_y <= bird_y - 8;
-        else if (bird_y < 470 && counter % 200000 == 0) bird_y <= bird_y + 3;
-    end
+	    if (gamestate && counter % 200000 == 0) begin
+		    if (flap) velocity <= 10;
+		    else if (velocity < 20) velocity <= velocity + 1;
+		
+		    if (bird_y + velocity > 5 && bird_y + velocity < 455) bird_y <= bird_y + velocity;
+	    end
     end
     
     
@@ -91,6 +96,7 @@ begin
 		vc <= 0;
 		bird_y <= 10'd240;
 		gamestate = 0;
+		velocity <= -10;
 	end
 	else
 	begin
@@ -140,29 +146,44 @@ begin
 		if (hc >= hbp && hc < (hbp+bird_x))
 		begin
 			red = 3'b000;
-			green = 3'b100;
+			green = 3'b101;
 			blue = 3'b111;
 		end
 		// display yellow bar
 		else if (hc >= (hbp+bird_x) && hc < (hbp+bird_x+20))
 		begin
 			if (vc >= (vbp+bird_y) && vc < (vbp+bird_y+20))
-                  begin
-                    red = 3'b111;
-                    green = 3'b111;
-                    blue = 3'b000;
-                  end else
-                  begin
-                      red = 3'b000;
-                      green = 3'b100;
-                      blue = 3'b111;
-                  end
+				begin
+				// black part of the eyeball
+				if (hc >= (hbp+bird_x+17) && hc < (hbp+bird_x+19) && vc >= (vbp+bird_y+13) && vc < (vbp+bird_y+15)) begin
+					red = 0;
+					green = 0;
+					blue = 0;
+				end
+				// white part of the eyeball
+				else if (hc >= (hbp+bird_x+15) && hc < (hbp+bird_x+20) && vc >= (vbp+bird_y+11) && vc < (vbp+bird_y+17)) begin
+					red = 3'b111;
+					green = 3'b111;
+					blue = 3'b111;
+				end 
+				//rest of the bird
+				else begin
+					red = 3'b111;
+					green = 3'b111;
+					blue = 3'b000;
+                  	end 
+			// rest of the column	
+			else begin
+                      		red = 3'b000;
+                      		green = 3'b100;
+                      		blue = 3'b111;
+                  	end
 		end
-		// display cyan bar
+		// display blue
 		else if (hc >= (hbp+bird_x+20) && hc < (hfp))
 		begin
 			red = 3'b000;
-			green = 3'b110;
+			green = 3'b101;
 			blue = 3'b111;
 		end
 		// we're outside active horizontal range so display black
