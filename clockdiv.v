@@ -27,7 +27,7 @@ module clockdiv(
 	);
 
 // 17-bit counter variable
-reg [17:0] q;
+	reg [25:0] q;
 
 // Clock divider --
 // Each bit in q is a clock signal that is
