@@ -19,14 +19,17 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 module vga640x480(
+    input wire flap,
 	input wire dclk,			//pixel clock: 25MHz
 	input wire clr,			//asynchronous reset
+	input wire pause,
 	input wire [9:0] y,
 	output wire hsync,		//horizontal sync out
 	output wire vsync,		//vertical sync out
 	output reg [2:0] red,	//red vga output
 	output reg [2:0] green, //green vga output
-	output reg [2:0] blue	//blue vga output
+	output reg [2:0] blue,	//blue vga output
+	output reg gamestate
 	);
 
 // video structure constants
@@ -46,9 +49,12 @@ parameter bird_x = 320;
 reg [9:0] hc;
 reg [9:0] vc;
 reg [9:0] bird_y;
+reg [20:0] counter;
 
 initial begin
-    bird_y <= 10'd240;
+    bird_y = 10'd240;
+    counter = 0;
+    gamestate = 0;
 end
 
 // Horizontal & vertical counters --
@@ -58,18 +64,33 @@ end
 // only triggered on signal transitions or "edges".
 // posedge = rising edge  &  negedge = falling edge
 // Assignment statements can only be used on type "reg" and need to be of the "non-blocking" type: <=
+//always @(y) begin
+//bird_y <= y;
+//end
 
-always @(y) begin
-	bird_y <= y;
-end
-	
+
 always @(posedge dclk or posedge clr)
 begin
+
+    if (!pause) begin
+    if (!gamestate && flap) gamestate = 1;
+    
+    counter <= counter+1;
+    
+    if (gamestate) begin
+    if (flap && bird_y > 15 && counter % 200000 == 0) bird_y <= bird_y - 8;
+        else if (bird_y < 470 && counter % 200000 == 0) bird_y <= bird_y + 3;
+    end
+    end
+    
+    
 	// reset condition
 	if (clr == 1)
 	begin
 		hc <= 0;
 		vc <= 0;
+		bird_y <= 10'd240;
+		gamestate = 0;
 	end
 	else
 	begin
@@ -119,13 +140,13 @@ begin
 		if (hc >= hbp && hc < (hbp+bird_x))
 		begin
 			red = 3'b000;
-			green = 3'b101;
+			green = 3'b100;
 			blue = 3'b111;
 		end
 		// display yellow bar
-		else if (hc >= (hbp+bird_x) && hc < (hbp+bird_x+15))
+		else if (hc >= (hbp+bird_x) && hc < (hbp+bird_x+20))
 		begin
-			if (vc >= (vbp+bird_y) && vc < (vbp+bird_y+15))
+			if (vc >= (vbp+bird_y) && vc < (vbp+bird_y+20))
                   begin
                     red = 3'b111;
                     green = 3'b111;
@@ -133,15 +154,15 @@ begin
                   end else
                   begin
                       red = 3'b000;
-                      green = 3'b101;
+                      green = 3'b100;
                       blue = 3'b111;
                   end
 		end
 		// display cyan bar
-		else if (hc >= (hbp+bird_x+15) && hc < (hfp))
+		else if (hc >= (hbp+bird_x+20) && hc < (hfp))
 		begin
 			red = 3'b000;
-			green = 3'b101;
+			green = 3'b110;
 			blue = 3'b111;
 		end
 		// we're outside active horizontal range so display black
