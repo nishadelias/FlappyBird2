@@ -101,7 +101,7 @@ begin
 		vc <= 0;
 		bird_y <= 10'd240;
 		gamestate = 0;
-		pillar_x = 12'd600;
+		pillar_x = 12'd640;
 	end
 	else
 	begin
