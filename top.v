@@ -1,24 +1,6 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date:    20:28:25 03/19/2013 
-// Design Name: 
-// Module Name:    NERP_demo_top 
-// Project Name: 
-// Target Devices: 
-// Tool versions: 
-// Description: 
-//
-// Dependencies: 
-//
-// Revision: 
-// Revision 0.01 - File Created
-// Additional Comments: 
-//
-//////////////////////////////////////////////////////////////////////////////////
-module NERP_demo_top(
+
+module top(
 	input wire clk,			//master clock = 100MHz
 	input wire clr,			//right-most pushbutton for reset
 	input wire pause,
@@ -48,7 +30,7 @@ assign dp = 1;
 
 wire [9:0] y;
 
-wire [10:0] score = 0;
+wire [10:0] score;
 
 // generate 7-segment clock & display clock
 clockdiv U1(
@@ -82,7 +64,8 @@ vga640x480 U3(
 	.red(red),
 	.green(green),
 	.blue(blue),
-	.gamestate(gamestate)
+	.gamestate(gamestate),
+	.score(score)
 	);
 
 
