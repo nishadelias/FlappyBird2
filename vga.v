@@ -49,14 +49,17 @@ parameter bird_x = 240;
 reg [9:0] hc;
 reg [9:0] vc;
 reg [9:0] bird_y;
-reg [20:0] counter;
-reg [5:0] velocity;
+reg [21:0] counter;
+reg [11:0] pillar_x;
+reg [10:0] pillar_y;
 
 initial begin
     bird_y = 10'd240;
     counter = 0;
     gamestate = 0;
-    velocity = -10;
+    pillar_x = 12'd640;
+    pillar_y = 240;
+
 end
 
 // Horizontal & vertical counters --
@@ -75,18 +78,20 @@ always @(posedge dclk or posedge clr)
 begin
 
     if (!pause) begin
-
-	    if (!gamestate && flap) gamestate = 1;
+    if (!gamestate && flap) gamestate = 1;
     
-	    counter <= counter+1;
+    counter <= counter+1;
     
-	    if (gamestate && counter % 200000 == 0) begin
-		    if (flap) velocity <= 10;
-		    else if (velocity < 20) velocity <= velocity + 1;
-		
-		    if (bird_y + velocity > 5 && bird_y + velocity < 455) bird_y <= bird_y + velocity;
-	    end
+    if (gamestate && counter % 200000 == 0) begin
+    if (flap && bird_y > 10) bird_y <= bird_y - 6;
+        else if (bird_y < 455) bird_y <= bird_y + 4;
+    if (pillar_x == 0) pillar_x <= 640;
+        else pillar_x <= pillar_x - 1;
+        
     end
+    end
+    
+    
     
     
 	// reset condition
@@ -96,7 +101,7 @@ begin
 		vc <= 0;
 		bird_y <= 10'd240;
 		gamestate = 0;
-		velocity <= -10;
+		pillar_x = 12'd600;
 	end
 	else
 	begin
@@ -143,6 +148,11 @@ begin
 		// while we're within the active horizontal range
 		// -----------------
 		// display blue
+		if (hc >= (hbp+pillar_x) && hc < (hbp+pillar_x+40) && hc >= hbp && hc < (hfp)) begin
+		    red = 3'b000;
+            green = 3'b111;
+            blue = 3'b000;
+		end else
 		if (hc >= hbp && hc < (hbp+bird_x))
 		begin
 			red = 3'b000;
@@ -155,25 +165,25 @@ begin
 			if (vc >= (vbp+bird_y) && vc < (vbp+bird_y+20))
 				begin
 				// black part of the eyeball
-				if (hc >= (hbp+bird_x+17) && hc < (hbp+bird_x+19) && vc >= (vbp+bird_y+13) && vc < (vbp+bird_y+15)) begin
+				if (hc >= (hbp+bird_x+16) && hc < (hbp+bird_x+18) && vc >= (vbp+bird_y+5) && vc < (vbp+bird_y+7)) begin
 					red = 0;
 					green = 0;
 					blue = 0;
 				end
 				// white part of the eyeball
-				else if (hc >= (hbp+bird_x+15) && hc < (hbp+bird_x+20) && vc >= (vbp+bird_y+11) && vc < (vbp+bird_y+17)) begin
+				else if (hc >= (hbp+bird_x+14) && hc < (hbp+bird_x+20) && vc >= (vbp+bird_y+3) && vc < (vbp+bird_y+9)) begin
 					red = 3'b111;
 					green = 3'b111;
 					blue = 3'b111;
 				end 
 				//rest of the bird
 				else begin
-					red = 3'b111;
-					green = 3'b111;
+					red = 3'b101;
+					green = 3'b101;
 					blue = 3'b000;
                   	end 
 			// rest of the column	
-			else begin
+			end else begin
                       		red = 3'b000;
                       		green = 3'b100;
                       		blue = 3'b111;
