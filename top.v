@@ -38,7 +38,7 @@ wire gamestate;
 
 
 // 7-segment clock interconnect
-wire segclk, gclk;
+wire segclk, gclk, blink_clk;
 
 // VGA display clock interconnect
 wire dclk;
@@ -48,21 +48,26 @@ assign dp = 1;
 
 wire [9:0] y;
 
+wire [10:0] score = 0;
+
 // generate 7-segment clock & display clock
 clockdiv U1(
 	.clk(clk),
 	.clr(clr),
 	.segclk(segclk),
 	.dclk(dclk),
-	.gclk(gclk)
+	.gclk(gclk),
+	.blink_clk(blink_clk)
 	);
 
 // 7-segment display controller
 segdisplay U2(
-	.segclk(segclk),
-	.clr(clr),
-	.seg(seg),
-	.an(an)
+    .game_state(gamestate),
+    .score(score),
+    .clk_blink(blink_clk),
+	.clk_fast(segclk),
+	.LED_out(seg),
+	.Anode_Activate(an)
 	);
 
 // VGA controller
@@ -79,11 +84,6 @@ vga640x480 U3(
 	.blue(blue),
 	.gamestate(gamestate)
 	);
-    
-//    game U4(
-//    .clk(gclk), //CHANGE BACK TO GAME
-//    .flap(flap),
-//    .y(y)
-//    );
+
 
 endmodule
