@@ -80,7 +80,7 @@ module segdisplay(
             end else begin
                 LED_out = 7'b0110000;
             end
-        end else if (blink_counter == 1 || blink_counter == 3 || blink_counter == 7) begin
+        end else if (blink_counter == 1 || blink_counter == 3 || blink_counter == 8) begin
             LED_out = 7'b1111111;
         end else begin
             case(LED_BCD)
