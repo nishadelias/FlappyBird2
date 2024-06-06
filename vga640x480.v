@@ -1,23 +1,5 @@
 `timescale 1ns / 1ps
-//////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
-// 
-// Create Date:    00:30:38 03/19/2013 
-// Design Name: 
-// Module Name:    vga640x480 
-// Project Name: 
-// Target Devices: 
-// Tool versions: 
-// Description: 
-//
-// Dependencies: 
-//
-// Revision: 
-// Revision 0.01 - File Created
-// Additional Comments: 
-//
-//////////////////////////////////////////////////////////////////////////////////
+
 module vga640x480(
     input wire flap,
 	input wire dclk,			//pixel clock: 25MHz
@@ -29,7 +11,8 @@ module vga640x480(
 	output reg [2:0] red,	//red vga output
 	output reg [2:0] green, //green vga output
 	output reg [2:0] blue,	//blue vga output
-	output reg gamestate
+	output reg gamestate,
+	output reg [10:0] score
 	);
 
 // video structure constants
@@ -52,13 +35,17 @@ reg [9:0] bird_y;
 reg [21:0] counter;
 reg [11:0] pillar_x;
 reg [10:0] pillar_y;
+reg overlap;
+reg [5:0] pcounter;
 
 initial begin
     bird_y = 10'd240;
     counter = 0;
     gamestate = 0;
-    pillar_x = 12'd640;
-    pillar_y = 240;
+    pillar_x = 12'd600;
+    pillar_y = 11'd240;
+    score = 0;
+    overlap = 0;
 
 end
 
@@ -78,15 +65,58 @@ always @(posedge dclk or posedge clr)
 begin
 
     if (!pause) begin
-    if (!gamestate && flap) gamestate = 1;
+    if (!gamestate && flap) begin
+        gamestate = 1;
+        score <= 0;
+    end
     
     counter <= counter+1;
     
-    if (gamestate && counter % 200000 == 0) begin
-    if (flap && bird_y > 10) bird_y <= bird_y - 6;
-        else if (bird_y < 455) bird_y <= bird_y + 4;
-    if (pillar_x == 0) pillar_x <= 640;
-        else pillar_x <= pillar_x - 1;
+    if (gamestate && counter % 80000 == 0) begin
+        
+    
+    if (flap && bird_y > 10) bird_y <= bird_y - 2;
+        else if (bird_y < 455) bird_y <= bird_y + 1;
+    if (pillar_x == 0) begin
+        pillar_x <= 640;
+        if (pcounter == 8) pcounter <= 0;
+        else pcounter <= pcounter + 1;
+        case(pcounter) 
+            0: pillar_y = 240;
+            1: pillar_y = 50;
+            2: pillar_y = 200;
+            3: pillar_y = 160;
+            4: pillar_y = 340;
+            5: pillar_y = 220;
+            6: pillar_y = 70;
+            7: pillar_y = 180;
+            default: pillar_y = 240;
+        endcase
+    end
+    else pillar_x <= pillar_x - 1;
+        
+    //If the bird x is in pillar range
+                    if(bird_x >= pillar_x && bird_x <= pillar_x+50) begin
+        
+                        //If bird is in the gap
+                        if(bird_y > pillar_y && bird_y < pillar_y + 120 && !overlap) begin
+                            score <= score+1;
+                            overlap <= 1;
+                        end
+                        else if(!(bird_y > pillar_y && bird_y < pillar_y + 120)) begin
+                            gamestate <= 0;
+                            hc <= 0;
+                            vc <= 0;
+                            bird_y <= 10'd240;
+                            pillar_x <= 12'd600;
+                            pillar_y <= 11'd240;
+                            overlap <= 0;
+                            
+                        end
+                    end
+                    else begin
+                        overlap <= 0;
+                    end
         
     end
     end
@@ -101,7 +131,10 @@ begin
 		vc <= 0;
 		bird_y <= 10'd240;
 		gamestate = 0;
-		pillar_x = 12'd640;
+		pillar_x = 12'd600;
+		pillar_y = 11'd240;
+		score <= 0;
+		overlap <= 0;
 	end
 	else
 	begin
@@ -148,15 +181,15 @@ begin
 		// while we're within the active horizontal range
 		// -----------------
 		// display blue
-		if (hc >= (hbp+pillar_x) && hc < (hbp+pillar_x+40) && hc >= hbp && hc < (hfp)) begin
+		if (hc >= (hbp+pillar_x) && hc < (hbp+pillar_x+50) && hc >= hbp && hc < (hfp) && !(vc >= (vbp+pillar_y) && vc < (vbp+pillar_y+120))) begin
 		    red = 3'b000;
             green = 3'b111;
             blue = 3'b000;
 		end else
 		if (hc >= hbp && hc < (hbp+bird_x))
 		begin
-			red = 3'b000;
-			green = 3'b101;
+			red = 3'b001;
+			green = 3'b110;
 			blue = 3'b111;
 		end
 		// display yellow bar
@@ -165,7 +198,7 @@ begin
 			if (vc >= (vbp+bird_y) && vc < (vbp+bird_y+20))
 				begin
 				// black part of the eyeball
-				if (hc >= (hbp+bird_x+16) && hc < (hbp+bird_x+18) && vc >= (vbp+bird_y+5) && vc < (vbp+bird_y+7)) begin
+				if (hc >= (hbp+bird_x+17) && hc < (hbp+bird_x+19) && vc >= (vbp+bird_y+5) && vc < (vbp+bird_y+7)) begin
 					red = 0;
 					green = 0;
 					blue = 0;
@@ -178,22 +211,22 @@ begin
 				end 
 				//rest of the bird
 				else begin
-					red = 3'b101;
-					green = 3'b101;
+					red = 3'b110;
+					green = 3'b110;
 					blue = 3'b000;
                   	end 
 			// rest of the column	
 			end else begin
-                      		red = 3'b000;
-                      		green = 3'b100;
+                      		red = 3'b001;
+                      		green = 3'b110;
                       		blue = 3'b111;
                   	end
 		end
 		// display blue
 		else if (hc >= (hbp+bird_x+20) && hc < (hfp))
 		begin
-			red = 3'b000;
-			green = 3'b101;
+			red = 3'b001;
+			green = 3'b110;
 			blue = 3'b111;
 		end
 		// we're outside active horizontal range so display black
